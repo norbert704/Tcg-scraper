@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const axios = require('axios');
 const cors = require('cors');
 
 const app = express();
@@ -7,22 +7,24 @@ app.use(cors());
 
 app.get('/count', async (req, res) => {
   try {
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    const url = 'https://www.ottosimon.nl/nl-nl/search?q=Tcg';
+    const apiKey = 'b9a69e11e452b65b3a1f339efe9ab2ab';
+
+    const response = await axios.get('http://api.scraperapi.com', {
+      params: {
+        api_key: apiKey,
+        url: url,
+        render: true
+      }
     });
 
-    const page = await browser.newPage();
-    await page.goto('https://www.ottosimon.nl/nl-nl/search?q=Tcg', { timeout: 60000 });
-
-    const content = await page.content();
-    const match = content.match(/(\d+)\s+resultaten/);
+    const html = response.data;
+    const match = html.match(/(\d+)\\s+resultaten/);
     const count = match ? parseInt(match[1]) : null;
 
-    await browser.close();
     res.json({ count });
   } catch (err) {
-    console.error('Scrape fout:', err);
+    console.error('ScraperAPI fout:', err);
     res.status(500).json({ error: 'Scrape mislukt' });
   }
 });
